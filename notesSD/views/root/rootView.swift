@@ -10,29 +10,36 @@ import SwiftData
 
 struct rootView: View {
     @Environment (\.modelContext) var context
-  @State private var isSheetViewPresented = false
+    @State private var isSheetViewPresented = false
     @Query(sort: \NotesModel.date) var notes: [NotesModel] = []
+    @State private var notesToEdit: NotesModel?
 
   var body: some View {
     NavigationStack {
       List {
         ForEach(notes) { notes in
           notesCell(notes: notes)
+                .onTapGesture {
+                    notesToEdit = notes
+                    
+                }
         }.onDelete(perform: { indexSet in
             for index in indexSet {
                 let note = notes[index]
                 context.delete(note)
             }
         })
-      
       }
       .navigationTitle("Notes")
       .navigationBarTitleDisplayMode(.large)
       .sheet(isPresented: $isSheetViewPresented, content: {
-         AddNotesSheet()
+          AddNotesSheet()
+          
       })
+      .sheet(item: $notesToEdit) { notes in
+          UpdateNotesSheet(notes: notes)
+      }
       .toolbar {
-        // Conditional visibility for the "Add" button
         if !notes.isEmpty {
           Button("Add", systemImage: "plus") {
             isSheetViewPresented = true
@@ -73,12 +80,16 @@ struct notesCell : View {
     var body: some View {
         HStack{
             Text(notes.title)
-                .font(.title)
+                .font(.subheadline)
             
             Text(notes.content)
                 .font(.subheadline)
                 .foregroundColor(.gray)
             
+            Spacer()
+            
+            Text(notes.date, style: .date
+            ).font(.subheadline)
         }
     }
 }
@@ -89,6 +100,7 @@ struct AddNotesSheet: View {
     
     @Environment (\.modelContext) var context
     
+
     @Environment (\.dismiss) var dismiss
     @State var uniqueId = Int64.random(in: 0...1000)
     @State private var name = ""
@@ -129,6 +141,38 @@ struct AddNotesSheet: View {
     }
 }
 
+
+struct UpdateNotesSheet: View {
+    
+    @Bindable var notes : NotesModel
+    @Environment (\.modelContext) var context
+    @Environment (\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationStack{
+            
+            Form{
+                
+                TextField("Add title", text: $notes.title)
+                TextField("Add content", text: $notes.content)
+                DatePicker("Date", selection: $notes.date, displayedComponents: .date)
+                
+                
+            }
+            .navigationTitle("Update Note")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar{
+                ToolbarItemGroup(placement: .topBarTrailing, content: {
+                    Button("update") {
+                       dismiss()
+                    }
+                })
+            }
+        }
+        
+        
+    }
+}
 
 #Preview {
     rootView()
