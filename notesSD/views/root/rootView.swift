@@ -8,7 +8,9 @@
 import SwiftUI
 import SwiftData
 
-struct rootView: View {
+struct RootView: View {
+    
+    @State private var showWelcomeSheet = UserDefaults.standard.bool(forKey: "showWelcomSheet")
     @Environment (\.modelContext) var context
     @State private var isSheetViewPresented = false
     @Query(sort: \NotesModel.date) var notes: [NotesModel] = []
@@ -33,12 +35,21 @@ struct rootView: View {
       .navigationTitle("Notes")
       .navigationBarTitleDisplayMode(.large)
       .sheet(isPresented: $isSheetViewPresented, content: {
-          AddNotesSheet()
+          AddNotesSheet(isEditing: false)
           
       })
       .sheet(item: $notesToEdit) { notes in
           UpdateNotesSheet(notes: notes)
       }
+      .sheet(isPresented: $showWelcomeSheet) {
+          OnboardingSheet()
+        }
+        .onAppear {
+          if !UserDefaults.standard.bool(forKey: "showWelcomSheet") {
+            showWelcomeSheet = true
+            UserDefaults.standard.set(true, forKey: "showWelcomSheet")
+          }
+        }
       .toolbar {
         if !notes.isEmpty {
           Button("Add", systemImage: "plus") {
@@ -100,7 +111,7 @@ struct AddNotesSheet: View {
     
     @Environment (\.modelContext) var context
     
-
+    let isEditing: Bool
     @Environment (\.dismiss) var dismiss
     @State var uniqueId = Int64.random(in: 0...1000)
     @State private var name = ""
@@ -111,7 +122,7 @@ struct AddNotesSheet: View {
         NavigationStack {
             Form{
                 
-                TextField("Add title", text: $name)
+                TextField("Add title", text: $name )
                 TextField("Add content", text: $content)
                 DatePicker("Date", selection: $date, displayedComponents: .date)
                 
@@ -175,5 +186,5 @@ struct UpdateNotesSheet: View {
 }
 
 #Preview {
-    rootView()
+    RootView()
 }

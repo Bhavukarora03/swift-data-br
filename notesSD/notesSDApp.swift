@@ -28,7 +28,7 @@ struct notesSDApp: App {
     
     var body: some Scene {
         WindowGroup {
-            rootView()
+            RootView()
         }
         .modelContainer(container)
         
